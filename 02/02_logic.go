@@ -25,7 +25,7 @@ func NewCPU(program []int) CPU {
 	}
 }
 
-func (c CPU) Run() {
+func (c *CPU) Run() {
 	for {
 		switch c.GetValue(c.address) {
 		case 1:
