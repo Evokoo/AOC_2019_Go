@@ -1,14 +1,28 @@
 package day02
 
-func Solve(file string) int {
+func Solve(file string, part int) int {
 	program := ParseInput(file)
+	cpu := NewCPU(program)
 
-	if file == "input.txt" {
-		program.SetValue(12, 1)
-		program.SetValue(2, 2)
+	if part == 2 {
+		for a := 0; a < 100; a++ {
+			for b := 0; b < 100; b++ {
+				cpu.SetValue(a, 1) // noun
+				cpu.SetValue(b, 2) // verb
+				cpu.Run()
+
+				if cpu.GetValue(0) == 19690720 {
+					return 100*a + b
+				}
+
+				cpu.Reset(program)
+			}
+		}
 	}
 
-	program.Run()
+	cpu.SetValue(12, 1)
+	cpu.SetValue(2, 2)
+	cpu.Run()
 
-	return program.GetValue(0)
+	return cpu.GetValue(0)
 }

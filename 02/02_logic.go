@@ -8,17 +8,32 @@ import (
 )
 
 // ========================
-// PROGRAM
+// INT MACHINE
 // ========================
-type Program []int
+type CPU struct {
+	memory  []int
+	address int
+}
 
-func (p Program) Run() {
-	for i := 0; i < len(p); i = i + 4 {
-		switch p[i] {
+func NewCPU(program []int) CPU {
+	memory := make([]int, len(program))
+	copy(memory, program)
+
+	return CPU{
+		memory:  memory,
+		address: 0,
+	}
+}
+
+func (c CPU) Run() {
+	for {
+		switch c.GetValue(c.address) {
 		case 1:
-			p.Add(p[i+1], p[i+2], p[i+3])
+			c.Add()
+			c.UpdateAddress(4)
 		case 2:
-			p.Multi(p[i+1], p[i+2], p[i+3])
+			c.Multi()
+			c.UpdateAddress(4)
 		case 99:
 			return
 		default:
@@ -26,28 +41,35 @@ func (p Program) Run() {
 		}
 	}
 }
-
-func (p *Program) SetValue(value, index int) {
-	(*p)[index] = value
+func (c *CPU) Reset(program []int) {
+	*c = NewCPU(program)
 }
-func (p *Program) GetValue(index int) int {
-	return (*p)[index]
+func (c *CPU) SetValue(value, index int) {
+	c.memory[index] = value
 }
-func (p *Program) Add(a, b, target int) {
-	a, b = (*p).GetValue(a), (*p).GetValue(b)
-	(*p).SetValue(a+b, target)
+func (c *CPU) GetValue(index int) int {
+	return c.memory[index]
 }
-func (p *Program) Multi(a, b, target int) {
-	a, b = (*p).GetValue(a), (*p).GetValue(b)
-	(*p).SetValue(a*b, target)
+func (c *CPU) UpdateAddress(amount int) {
+	c.address += amount
+}
+func (c *CPU) Add() {
+	a := c.GetValue(c.GetValue(c.address + 1))
+	b := c.GetValue(c.GetValue(c.address + 2))
+	c.SetValue(a+b, c.GetValue(c.address+3))
+}
+func (c *CPU) Multi() {
+	a := c.GetValue(c.GetValue(c.address + 1))
+	b := c.GetValue(c.GetValue(c.address + 2))
+	c.SetValue(a*b, c.GetValue(c.address+3))
 }
 
 // ========================
 // PARSER
 // ========================
-func ParseInput(file string) Program {
+func ParseInput(file string) []int {
 	data := utils.ReadFile(file)
-	var program Program
+	var program []int
 	for value := range strings.SplitSeq(data, ",") {
 		n, _ := strconv.Atoi(value)
 		program = append(program, n)
