@@ -1,8 +1,10 @@
 package day02
 
+import "github.com/Evokoo/AOC_2019_Go/intcode"
+
 func Solve(file string, part int) int {
 	program := ParseInput(file)
-	cpu := NewCPU(program)
+	cpu := intcode.NewCPU(program)
 
 	if part == 2 {
 		for a := 0; a < 100; a++ {
