@@ -1,5 +1,5 @@
 package day01
-	
-func Solve(file string) int {
-	return 0
+
+func Solve(file string, part int) int {
+	return CalculateFuelRequirements(file, part)
 }
