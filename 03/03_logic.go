@@ -18,13 +18,15 @@ type Point struct{ x, y int }
 // ========================
 type Wire struct {
 	position Point
-	path     map[Point]struct{}
+	path     map[Point]int
+	steps    int
 }
 
 func NewWire() *Wire {
 	return &Wire{
 		position: Point{0, 0},
-		path:     make(map[Point]struct{}),
+		path:     make(map[Point]int),
+		steps:    0,
 	}
 }
 
@@ -32,7 +34,8 @@ func (w *Wire) UpdateWire(move Move) {
 	for i := 0; i < move.steps; i++ {
 		w.position.x += move.direction.x
 		w.position.y += move.direction.y
-		w.path[w.position] = struct{}{}
+		w.steps++
+		w.path[w.position] = w.steps
 	}
 }
 
@@ -87,23 +90,32 @@ func ManhattanDistance(a Point, b Point) int {
 	return utils.Abs(a.x-b.x) + utils.Abs(a.y-b.y)
 }
 
-func FindClosestIntersection(wires []*Wire) int {
-	intersections := make(map[Point]struct{})
+func FindClosestIntersection(wires []*Wire, part int) int {
+	intersections := make(map[Point]int)
 
 	for point := range wires[0].path {
 		if _, has := wires[1].path[point]; has {
-			intersections[point] = struct{}{}
+			intersections[point] = wires[0].path[point] + wires[1].path[point]
 		}
 	}
 
 	minDistance := math.MaxInt
+	minSteps := math.MaxInt
 	origin := Point{0, 0}
 
-	for point := range intersections {
+	for point, steps := range intersections {
 		distance := ManhattanDistance(origin, point)
 		if distance < minDistance {
 			minDistance = distance
 		}
+
+		if steps < minSteps {
+			minSteps = steps
+		}
+	}
+
+	if part == 2 {
+		return minSteps
 	}
 
 	return minDistance

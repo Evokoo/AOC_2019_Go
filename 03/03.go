@@ -1,6 +1,6 @@
 package day03
 
-func Solve(file string) int {
+func Solve(file string, part int) int {
 	paths := ParseInput(file)
 	wires := []*Wire{NewWire(), NewWire()}
 
@@ -10,5 +10,5 @@ func Solve(file string) int {
 		}
 	}
 
-	return FindClosestIntersection(wires)
+	return FindClosestIntersection(wires, part)
 }
