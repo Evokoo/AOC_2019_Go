@@ -1,5 +1,14 @@
 package day03
-	
+
 func Solve(file string) int {
-	return 0
+	paths := ParseInput(file)
+	wires := []*Wire{NewWire(), NewWire()}
+
+	for i, path := range paths {
+		for _, move := range path {
+			wires[i].UpdateWire(move)
+		}
+	}
+
+	return FindClosestIntersection(wires)
 }
