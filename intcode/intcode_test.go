@@ -19,13 +19,13 @@ var _ = Describe("CPU", func() {
 		program := []int{1, 0, 0, 0, 99}
 		cpu := NewCPU(program)
 		cpu.Run()
-		Expect(cpu.GetValue(0)).To(Equal(2))
+		Expect(cpu.GetMemoryValue(0)).To(Equal(2))
 	})
 
 	It("Simple multiplication test", func() {
 		program := []int{2, 4, 4, 5, 99, 0}
 		cpu := NewCPU(program)
 		cpu.Run()
-		Expect(cpu.GetValue(5)).To(Equal(9801))
+		Expect(cpu.GetMemoryValue(5)).To(Equal(9801))
 	})
 })
