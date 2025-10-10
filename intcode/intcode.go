@@ -67,7 +67,7 @@ func (c *CPU) Run() {
 	}
 }
 func (c *CPU) parseInstruction() (int, int) {
-	instruction := c.GetMemoryValue(c.address)
+	instruction := c.ReadMemory(c.address)
 	code := instruction % 100
 	modeData := instruction / 100
 	return code, modeData
@@ -87,7 +87,7 @@ func (c *CPU) readInstruction() (int, [3]Param, int) {
 
 	var params [3]Param
 	for i := 0; i < count; i++ {
-		params[i].value = c.GetMemoryValue(c.address + i + 1)
+		params[i].value = c.ReadMemory(c.address + i + 1)
 		params[i].mode = modeData % 10
 		modeData /= 10
 	}
@@ -101,26 +101,26 @@ func (c *CPU) readInstruction() (int, [3]Param, int) {
 }
 func (c *CPU) getParamValue(p Param) int {
 	if p.mode == 0 {
-		return c.GetMemoryValue(p.value)
+		return c.ReadMemory(p.value)
 	}
 	return p.value
 }
 
 // Opcode #1 Add
 func (c *CPU) add(params [3]Param, step int) {
-	c.SetMemoryValue(c.getParamValue(params[0])+c.getParamValue(params[1]), params[2].value)
+	c.WriteMemory(c.getParamValue(params[0])+c.getParamValue(params[1]), params[2].value)
 	c.updateAddress(step)
 }
 
 // Opcode #2 Multiply
 func (c *CPU) multiply(params [3]Param, step int) {
-	c.SetMemoryValue(c.getParamValue(params[0])*c.getParamValue(params[1]), params[2].value)
+	c.WriteMemory(c.getParamValue(params[0])*c.getParamValue(params[1]), params[2].value)
 	c.updateAddress(step)
 }
 
 // Opcode #3 Set Value from Input
 func (c *CPU) write_from_input(params [3]Param, step int) {
-	c.SetMemoryValue(c.popFromInput(), params[0].value)
+	c.WriteMemory(c.popFromInput(), params[0].value)
 	c.updateAddress(step)
 }
 
@@ -154,7 +154,7 @@ func (c *CPU) less_than(params [3]Param, step int) {
 	if c.getParamValue(params[0]) < c.getParamValue(params[1]) {
 		value = 1
 	}
-	c.SetMemoryValue(value, params[2].value)
+	c.WriteMemory(value, params[2].value)
 	c.updateAddress(step)
 }
 
@@ -164,7 +164,7 @@ func (c *CPU) equal_to(params [3]Param, step int) {
 	if c.getParamValue(params[0]) == c.getParamValue(params[1]) {
 		value = 1
 	}
-	c.SetMemoryValue(value, params[2].value)
+	c.WriteMemory(value, params[2].value)
 	c.updateAddress(step)
 }
 
@@ -176,10 +176,10 @@ func (c *CPU) equal_to(params [3]Param, step int) {
 func (c *CPU) GetMemory() []int {
 	return c.memory
 }
-func (c *CPU) SetMemoryValue(newValue, address int) {
-	c.memory[address] = newValue
+func (c *CPU) WriteMemory(value, address int) {
+	c.memory[address] = value
 }
-func (c *CPU) GetMemoryValue(address int) int {
+func (c *CPU) ReadMemory(address int) int {
 	return c.memory[address]
 }
 

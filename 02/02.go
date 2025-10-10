@@ -9,11 +9,11 @@ func Solve(file string, part int) int {
 	if part == 2 {
 		for a := 0; a < 100; a++ {
 			for b := 0; b < 100; b++ {
-				cpu.SetMemoryValue(a, 1) // noun
-				cpu.SetMemoryValue(b, 2) // verb
+				cpu.WriteMemory(a, 1) // noun
+				cpu.WriteMemory(b, 2) // verb
 				cpu.Run()
 
-				if cpu.GetMemoryValue(0) == 19690720 {
+				if cpu.ReadMemory(0) == 19690720 {
 					return 100*a + b
 				}
 
@@ -22,9 +22,9 @@ func Solve(file string, part int) int {
 		}
 	}
 
-	cpu.SetMemoryValue(12, 1)
-	cpu.SetMemoryValue(2, 2)
+	cpu.WriteMemory(12, 1)
+	cpu.WriteMemory(2, 2)
 	cpu.Run()
 
-	return cpu.GetMemoryValue(0)
+	return cpu.ReadMemory(0)
 }
