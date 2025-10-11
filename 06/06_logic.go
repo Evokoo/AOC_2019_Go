@@ -60,6 +60,43 @@ func (t *Tree) InsertNode(pair []string) {
 	child.AddParent(parent)
 }
 
+func (t *Tree) DistanceToRoot(id string) int {
+	steps := 0
+	node := t.RetriveNode(id)
+
+	for node.id != t.root.id {
+		steps++
+		node = node.parent
+	}
+
+	return steps
+}
+
+func (t *Tree) DistanceFromNode(a, b string) int {
+	nodeA := t.RetriveNode(a).parent
+	nodeB := t.RetriveNode(b).parent
+
+	path := make(map[string]int)
+	dist := 0
+	for nodeA.id != t.root.id {
+		path[nodeA.id] = dist
+		nodeA = nodeA.parent
+		dist++
+	}
+
+	dist = 0
+	for nodeB.id != t.root.id {
+		if distance, found := path[nodeB.id]; found {
+			return distance + dist
+		}
+
+		nodeB = nodeB.parent
+		dist++
+	}
+
+	panic("NOT CONNECTED")
+}
+
 // ========================
 // PARSER
 // ========================

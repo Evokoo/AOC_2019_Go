@@ -1,25 +1,19 @@
 package day06
 
-import "fmt"
-
-func Solve(file string) int {
+func Solve(file string, part int) int {
 	tree := BuildTree(file)
-	orbits := 0
+	result := 0
 
-	for key, node := range tree.lookup {
-		if key == "COM" {
-			continue
+	if part == 1 {
+		for id := range tree.lookup {
+			if file == "example.txt" && (id == "SAN" || id == "YOU") {
+				continue
+			}
+			result += tree.DistanceToRoot(id)
 		}
-		steps := 0
-
-		for node.id != tree.root.id {
-			node = node.parent
-			steps++
-		}
-
-		orbits += steps
+	} else {
+		result = tree.DistanceFromNode("YOU", "SAN")
 	}
 
-	fmt.Println(orbits)
-	return orbits
+	return result
 }
