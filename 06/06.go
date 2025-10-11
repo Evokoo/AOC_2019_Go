@@ -12,7 +12,7 @@ func Solve(file string, part int) int {
 			result += tree.DistanceToRoot(id)
 		}
 	} else {
-		result = tree.DistanceFromNode("YOU", "SAN")
+		result = tree.DistanceBetweenNodes("YOU", "SAN")
 	}
 
 	return result
