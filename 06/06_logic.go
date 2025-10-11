@@ -72,7 +72,7 @@ func (t *Tree) DistanceToRoot(id string) int {
 	return steps
 }
 
-func (t *Tree) DistanceFromNode(a, b string) int {
+func (t *Tree) DistanceBetweenNodes(a, b string) int {
 	nodeA := t.RetriveNode(a).parent
 	nodeB := t.RetriveNode(b).parent
 
