@@ -25,41 +25,71 @@ func ParseInput(file string) []int {
 }
 
 // ========================
-// THRUSTERS
+// AMPLIFERS
 // ========================
+type Amplifers []*intcode.CPU
 
-func RunThrusterSequence(program, sequence []int) int {
-	cpu := intcode.NewCPU(program)
+func SetupAmplifiers(program, sequence []int) Amplifers {
+	var amplifiers Amplifers
+
+	for i := range 5 {
+		amp := intcode.NewCPU(program)
+		amp.PushToInput(sequence[i])
+		amplifiers = append(amplifiers, amp)
+	}
+
+	return amplifiers
+}
+
+func RunSequence(amplifiers Amplifers, part int) int {
 	signal := 0
 
-	for i := 0; i < 5; i++ {
-		cpu.PushToInput(sequence[i])
-		cpu.PushToInput(signal)
-		cpu.Run()
-		signal = cpu.GetOutput()[0]
-		cpu.Reset(program)
+	if part == 1 {
+		for _, amp := range amplifiers {
+			amp.PushToInput(signal)
+			amp.Run()
+			signal = amp.PopFromOutput()
+		}
+		return signal
+	}
+
+	for amplifiers[4].IsActive() {
+		for _, amp := range amplifiers {
+			amp.PushToInput(signal)
+			amp.Run()
+			signal = amp.PopFromOutput()
+		}
 	}
 
 	return signal
 }
 
-func CalibrateThrusters(file string) int {
+func FindOptimalSignal(file string, part int) int {
 	program := ParseInput(file)
-
-	var sequences [][]int
-	GenerateSequences([]int{0, 1, 2, 3, 4}, 0, &sequences)
-
-	var max int
-	for _, sequence := range sequences {
-		signal := RunThrusterSequence(program, sequence)
-		if signal > max {
-			max = signal
+	maxSignal := 0
+	for _, sequence := range GenerateSequences(part) {
+		signal := RunSequence(SetupAmplifiers(program, sequence), part)
+		if signal > maxSignal {
+			maxSignal = signal
 		}
 	}
-	return max
+	return maxSignal
 }
 
-func GenerateSequences(a []int, l int, results *[][]int) {
+func GenerateSequences(part int) [][]int {
+	phaseSet := []int{0, 1, 2, 3, 4}
+
+	if part == 2 {
+		phaseSet = []int{5, 6, 7, 8, 9}
+	}
+
+	var sequences [][]int
+	permutate(phaseSet, 0, &sequences)
+
+	return sequences
+}
+
+func permutate(a []int, l int, results *[][]int) {
 	if l == len(a)-1 {
 		tmp := make([]int, len(a))
 		copy(tmp, a)
@@ -69,7 +99,7 @@ func GenerateSequences(a []int, l int, results *[][]int) {
 
 	for i := l; i < len(a); i++ {
 		a[l], a[i] = a[i], a[l]
-		GenerateSequences(a, l+1, results)
+		permutate(a, l+1, results)
 		a[l], a[i] = a[i], a[l]
 	}
 }

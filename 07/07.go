@@ -1,5 +1,5 @@
 package day07
 
-func Solve(file string) int {
-	return CalibrateThrusters(file)
+func Solve(file string, part int) int {
+	return FindOptimalSignal(file, part)
 }
