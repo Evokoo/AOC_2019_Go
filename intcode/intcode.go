@@ -10,6 +10,7 @@ type CPU struct {
 	address int
 	input   Queue
 	output  Queue
+	active  bool
 }
 
 func NewCPU(program []int) *CPU {
@@ -21,6 +22,7 @@ func NewCPU(program []int) *CPU {
 		address: 0,
 		input:   NewQueue(),
 		output:  NewQueue(),
+		active:  true,
 	}
 }
 func (c *CPU) Reset(program []int) {
@@ -36,7 +38,6 @@ type Param struct {
 }
 
 func (c *CPU) Run() {
-	fmt.Println("Program Start...")
 	for {
 		opcode, params, step := c.readInstruction()
 
@@ -46,7 +47,10 @@ func (c *CPU) Run() {
 		case 2:
 			c.multiply(params, step)
 		case 3:
-			c.write_from_input(params, step)
+			if len(c.input) == 0 {
+				return
+			}
+			c.read_from_input(params, step)
 		case 4:
 			c.write_to_output(params, step)
 		case 5:
@@ -58,11 +62,10 @@ func (c *CPU) Run() {
 		case 8:
 			c.equal_to(params, step)
 		case 99:
-			fmt.Println("Program Halt...")
+			c.active = false
 			return
 		default:
-			fmt.Printf("Invalid OP Code: %d\n", opcode)
-			panic("Invalid OP code")
+			panic(fmt.Sprintf("Invalid opcode: %d", opcode))
 		}
 	}
 }
@@ -119,7 +122,7 @@ func (c *CPU) multiply(params [3]Param, step int) {
 }
 
 // Opcode #3 Set Value from Input
-func (c *CPU) write_from_input(params [3]Param, step int) {
+func (c *CPU) read_from_input(params [3]Param, step int) {
 	c.WriteMemory(c.popFromInput(), params[0].value)
 	c.updateAddress(step)
 }
@@ -194,6 +197,11 @@ func (c *CPU) updateAddress(value int) {
 	c.address += value
 }
 
+// Activity
+func (c *CPU) IsActive() bool {
+	return c.active
+}
+
 // ========================
 // I/O
 // ========================
@@ -215,7 +223,7 @@ func (c *CPU) PrintInput() {
 func (c *CPU) PushToOutput(value int) {
 	c.output.Push(value)
 }
-func (c *CPU) popFromOutput() int {
+func (c *CPU) PopFromOutput() int {
 	return c.output.Pop()
 }
 func (c *CPU) PrintOutput() {
