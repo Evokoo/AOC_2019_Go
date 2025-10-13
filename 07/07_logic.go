@@ -34,7 +34,7 @@ func SetupAmplifiers(program, sequence []int) Amplifers {
 
 	for i := range 5 {
 		amp := intcode.NewCPU(program)
-		amp.PushToInput(sequence[i])
+		amp.ReadInput(sequence[i])
 		amplifiers = append(amplifiers, amp)
 	}
 
@@ -46,18 +46,18 @@ func RunSequence(amplifiers Amplifers, part int) int {
 
 	if part == 1 {
 		for _, amp := range amplifiers {
-			amp.PushToInput(signal)
+			amp.ReadInput(signal)
 			amp.Run()
-			signal = amp.PopFromOutput()
+			signal = amp.ReadOutput()
 		}
 		return signal
 	}
 
 	for amplifiers[4].IsActive() {
 		for _, amp := range amplifiers {
-			amp.PushToInput(signal)
+			amp.ReadInput(signal)
 			amp.Run()
-			signal = amp.PopFromOutput()
+			signal = amp.ReadOutput()
 		}
 	}
 

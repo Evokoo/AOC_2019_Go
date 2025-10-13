@@ -12,9 +12,8 @@ func Solve(file string, part int) int {
 		id = 5
 	}
 
-	cpu.PushToInput(id)
+	cpu.ReadInput(id)
 	cpu.Run()
-	output := cpu.GetOutput()
 
-	return output[len(output)-1]
+	return cpu.ReadOutput()
 }

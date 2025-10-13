@@ -8,8 +8,8 @@ import "fmt"
 type CPU struct {
 	memory  []int
 	address int
-	input   Queue
-	output  Queue
+	input   []int
+	output  []int
 	active  bool
 }
 
@@ -20,8 +20,8 @@ func NewCPU(program []int) *CPU {
 	return &CPU{
 		memory:  memory,
 		address: 0,
-		input:   NewQueue(),
-		output:  NewQueue(),
+		input:   []int{},
+		output:  []int{},
 		active:  true,
 	}
 }
@@ -32,36 +32,122 @@ func (c *CPU) Reset(program []int) {
 // ========================
 // OPERATION
 // ========================
-type Param struct {
-	value int
-	mode  int
+func (c *CPU) readInstruction() (int, [3]int) {
+	instruction := c.ReadFromMemory(c.getCurrentAddress())
+	opcode := instruction % 100
+	modes := [3]int{
+		(instruction / 100) % 10,
+		(instruction / 1000) % 10,
+		(instruction / 10000) % 10,
+	}
+	return opcode, modes
+}
+
+func (c *CPU) getOpInput(mode, offset int) int {
+	address := c.getCurrentAddress() + offset
+
+	switch mode {
+	case 0:
+		return c.ReadFromMemory(c.ReadFromMemory(address))
+	case 1:
+		return c.ReadFromMemory(address)
+	default:
+		panic("Invalid Mode")
+	}
+}
+
+func (c *CPU) getOpOutput(mode, offset int) int {
+	address := c.getCurrentAddress() + offset
+	switch mode {
+	case 0, 1:
+		return c.ReadFromMemory(address)
+	default:
+		panic("Invalid Mode")
+	}
 }
 
 func (c *CPU) Run() {
 	for {
-		opcode, params, step := c.readInstruction()
+		opcode, modes := c.readInstruction()
 
 		switch opcode {
-		case 1:
-			c.add(params, step)
-		case 2:
-			c.multiply(params, step)
-		case 3:
+		case 1: // ADD
+			x := c.getOpInput(modes[0], 1)
+			y := c.getOpInput(modes[1], 2)
+			z := c.getOpOutput(modes[2], 3)
+
+			c.WriteToMemory(x+y, z)
+			c.incrementAddress(4)
+
+		case 2: // MULTIPLY
+			x := c.getOpInput(modes[0], 1)
+			y := c.getOpInput(modes[1], 2)
+			z := c.getOpOutput(modes[2], 3)
+
+			c.WriteToMemory(x*y, z)
+			c.incrementAddress(4)
+
+		case 3: // READ INPUT
 			if len(c.input) == 0 {
+				// fmt.Println("No Inputs found")
 				return
 			}
-			c.read_from_input(params, step)
-		case 4:
-			c.write_to_output(params, step)
-		case 5:
-			c.jump_true(params, step)
-		case 6:
-			c.jump_false(params, step)
-		case 7:
-			c.less_than(params, step)
-		case 8:
-			c.equal_to(params, step)
-		case 99:
+			x := c.writeInput()
+			y := c.getOpOutput(modes[0], 1)
+			c.WriteToMemory(x, y)
+			c.incrementAddress(2)
+
+		case 4: // PRINT TO OUTPUT
+			x := c.getOpInput(modes[0], 1)
+
+			c.WriteOutput(x)
+			c.incrementAddress(2)
+
+		case 5: // JUMP IF NOT ZERO
+			x := c.getOpInput(modes[0], 1)
+			y := c.getOpInput(modes[1], 2)
+
+			if x != 0 {
+				c.setAddress(y)
+			} else {
+				c.incrementAddress(3)
+			}
+
+		case 6: // JUMP IF ZERO
+			x := c.getOpInput(modes[0], 1)
+			y := c.getOpInput(modes[1], 2)
+
+			if x == 0 {
+				c.setAddress(y)
+			} else {
+				c.incrementAddress(3)
+			}
+
+		case 7: // LESS THAN
+			x := c.getOpInput(modes[0], 1)
+			y := c.getOpInput(modes[1], 2)
+			z := c.getOpOutput(modes[2], 3)
+			v := 0
+
+			if x < y {
+				v = 1
+			}
+			c.WriteToMemory(v, z)
+			c.incrementAddress(4)
+
+		case 8: // EQUAL
+			x := c.getOpInput(modes[0], 1)
+			y := c.getOpInput(modes[1], 2)
+			z := c.getOpOutput(modes[2], 3)
+			v := 0
+
+			if x == y {
+				v = 1
+			}
+			c.WriteToMemory(v, z)
+			c.incrementAddress(4)
+
+		case 99: // HALT
 			c.active = false
 			return
 		default:
@@ -69,131 +155,27 @@ func (c *CPU) Run() {
 		}
 	}
 }
-func (c *CPU) parseInstruction() (int, int) {
-	instruction := c.ReadMemory(c.address)
-	code := instruction % 100
-	modeData := instruction / 100
-	return code, modeData
-}
-func (c *CPU) readInstruction() (int, [3]Param, int) {
-	opcode, modeData := c.parseInstruction()
-	count := 3
-
-	switch opcode {
-	case 3, 4:
-		count = 1
-	case 5, 6:
-		count = 2
-	case 99:
-		count = 0
-	}
-
-	var params [3]Param
-	for i := 0; i < count; i++ {
-		params[i].value = c.ReadMemory(c.address + i + 1)
-		params[i].mode = modeData % 10
-		modeData /= 10
-	}
-
-	if opcode == 1 || opcode == 2 || opcode == 3 || opcode == 7 || opcode == 8 {
-		last := count - 1
-		params[last].mode = 0
-	}
-
-	return opcode, params, count + 1
-}
-func (c *CPU) getParamValue(p Param) int {
-	if p.mode == 0 {
-		return c.ReadMemory(p.value)
-	}
-	return p.value
-}
-
-// Opcode #1 Add
-func (c *CPU) add(params [3]Param, step int) {
-	c.WriteMemory(c.getParamValue(params[0])+c.getParamValue(params[1]), params[2].value)
-	c.updateAddress(step)
-}
-
-// Opcode #2 Multiply
-func (c *CPU) multiply(params [3]Param, step int) {
-	c.WriteMemory(c.getParamValue(params[0])*c.getParamValue(params[1]), params[2].value)
-	c.updateAddress(step)
-}
-
-// Opcode #3 Set Value from Input
-func (c *CPU) read_from_input(params [3]Param, step int) {
-	c.WriteMemory(c.popFromInput(), params[0].value)
-	c.updateAddress(step)
-}
-
-// Opcode #4 Write Value to Output
-func (c *CPU) write_to_output(params [3]Param, step int) {
-	c.PushToOutput(c.getParamValue(params[0]))
-	c.updateAddress(step)
-}
-
-// Opcode #5 Jump if p[0] != 0
-func (c *CPU) jump_true(params [3]Param, step int) {
-	if c.getParamValue(params[0]) != 0 {
-		c.setAddress(c.getParamValue(params[1]))
-	} else {
-		c.updateAddress(step)
-	}
-}
-
-// Opcode #6 Jump if p[0] == 0
-func (c *CPU) jump_false(params [3]Param, step int) {
-	if c.getParamValue(params[0]) == 0 {
-		c.setAddress(c.getParamValue(params[1]))
-	} else {
-		c.updateAddress(step)
-	}
-}
-
-// Opcode #7 Set p[2] to 1 if p[0] < p[1] else 0
-func (c *CPU) less_than(params [3]Param, step int) {
-	value := 0
-	if c.getParamValue(params[0]) < c.getParamValue(params[1]) {
-		value = 1
-	}
-	c.WriteMemory(value, params[2].value)
-	c.updateAddress(step)
-}
-
-// Opcode #8 Set p[2] to 1 if p[0] == p[1] else 0
-func (c *CPU) equal_to(params [3]Param, step int) {
-	value := 0
-	if c.getParamValue(params[0]) == c.getParamValue(params[1]) {
-		value = 1
-	}
-	c.WriteMemory(value, params[2].value)
-	c.updateAddress(step)
-}
 
 // ========================
 // GETTERS & SETTERS
 // ========================
 
 // Memory
-func (c *CPU) GetMemory() []int {
-	return c.memory
-}
-func (c *CPU) WriteMemory(value, address int) {
+func (c *CPU) WriteToMemory(value, address int) {
 	c.memory[address] = value
 }
-func (c *CPU) ReadMemory(address int) int {
+func (c *CPU) ReadFromMemory(address int) int {
 	return c.memory[address]
 }
 
 // Address
-func (c *CPU) GetAddres() int {
+func (c *CPU) getCurrentAddress() int {
 	return c.address
 }
 func (c *CPU) setAddress(value int) {
 	c.address = value
 }
-func (c *CPU) updateAddress(value int) {
+func (c *CPU) incrementAddress(value int) {
 	c.address += value
 }
 
@@ -207,30 +189,42 @@ func (c *CPU) IsActive() bool {
 // ========================
 
 // Input
-func (c *CPU) PushToInput(value int) {
-	c.input.Push(value)
+func (c *CPU) ReadInput(value int) {
+	c.input = append(c.input, value)
 }
-func (c *CPU) popFromInput() int {
-	return c.input.Pop()
-}
-func (c *CPU) PrintInput() {
-	for i, value := range c.input {
-		fmt.Printf("%d at index %d\n", value, i)
-	}
+func (c *CPU) writeInput() int {
+	value := c.input[0]
+	c.input = c.input[1:]
+	return value
 }
 
 // Output
-func (c *CPU) PushToOutput(value int) {
-	c.output.Push(value)
+func (c *CPU) WriteOutput(value int) {
+	c.output = append(c.output, value)
 }
-func (c *CPU) PopFromOutput() int {
-	return c.output.Pop()
+func (c *CPU) ReadOutput() int {
+	return c.output[len(c.output)-1]
+}
+
+// ========================
+// DEBUG
+// ========================
+
+func (c *CPU) PrintMemory() {
+	fmt.Println("Current memory contents")
+	for i, value := range c.memory {
+		fmt.Printf("%d at index %d\n", value, i)
+	}
 }
 func (c *CPU) PrintOutput() {
+	fmt.Println("Current output contents")
 	for i, value := range c.output {
 		fmt.Printf("%d at index %d\n", value, i)
 	}
 }
-func (c *CPU) GetOutput() Queue {
-	return c.output
+func (c *CPU) PrintInput() {
+	fmt.Println("Current input contents")
+	for i, value := range c.input {
+		fmt.Printf("%d at index %d\n", value, i)
+	}
 }
