@@ -1,28 +1,35 @@
 package intcode
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // ========================
 // CPU
 // ========================
 type CPU struct {
-	memory  []int
+	memory  map[int]int
 	address int
 	input   []int
 	output  []int
 	active  bool
+	base    int
+}
+
+func initialiseMemory(program []int) map[int]int {
+	memory := make(map[int]int)
+	for i, value := range program {
+		memory[i] = value
+	}
+	return memory
 }
 
 func NewCPU(program []int) *CPU {
-	memory := make([]int, len(program))
-	copy(memory, program)
-
 	return &CPU{
-		memory:  memory,
-		address: 0,
-		input:   []int{},
-		output:  []int{},
-		active:  true,
+		memory: initialiseMemory(program),
+		input:  []int{},
+		output: []int{},
+		active: true,
 	}
 }
 func (c *CPU) Reset(program []int) {
@@ -51,6 +58,8 @@ func (c *CPU) getOpInput(mode, offset int) int {
 		return c.ReadFromMemory(c.ReadFromMemory(address))
 	case 1:
 		return c.ReadFromMemory(address)
+	case 2:
+		return c.ReadFromMemory(c.ReadFromMemory(address) + c.currentBase())
 	default:
 		panic("Invalid Mode")
 	}
@@ -61,6 +70,8 @@ func (c *CPU) getOpOutput(mode, offset int) int {
 	switch mode {
 	case 0, 1:
 		return c.ReadFromMemory(address)
+	case 2:
+		return c.ReadFromMemory(address) + c.currentBase()
 	default:
 		panic("Invalid Mode")
 	}
@@ -100,7 +111,7 @@ func (c *CPU) Run() {
 		case 4: // PRINT TO OUTPUT
 			x := c.getOpInput(modes[0], 1)
 
-			c.WriteOutput(x)
+			c.writeOutput(x)
 			c.incrementAddress(2)
 
 		case 5: // JUMP IF NOT ZERO
@@ -147,6 +158,10 @@ func (c *CPU) Run() {
 			c.WriteToMemory(v, z)
 			c.incrementAddress(4)
 
+		case 9: //ADJUST BASE
+			x := c.getOpInput(modes[0], 1)
+			c.adjustBase(x)
+			c.incrementAddress(2)
 		case 99: // HALT
 			c.active = false
 			return
@@ -179,6 +194,14 @@ func (c *CPU) incrementAddress(value int) {
 	c.address += value
 }
 
+// Base
+func (c *CPU) currentBase() int {
+	return c.base
+}
+func (c *CPU) adjustBase(amount int) {
+	c.base += amount
+}
+
 // Activity
 func (c *CPU) IsActive() bool {
 	return c.active
@@ -199,7 +222,7 @@ func (c *CPU) writeInput() int {
 }
 
 // Output
-func (c *CPU) WriteOutput(value int) {
+func (c *CPU) writeOutput(value int) {
 	c.output = append(c.output, value)
 }
 func (c *CPU) ReadOutput() int {
@@ -211,20 +234,32 @@ func (c *CPU) ReadOutput() int {
 // ========================
 
 func (c *CPU) PrintMemory() {
-	fmt.Println("Current memory contents")
-	for i, value := range c.memory {
-		fmt.Printf("%d at index %d\n", value, i)
+	if len(c.memory) == 0 {
+		fmt.Println("Memory in empty")
+	} else {
+		fmt.Println("Current memory contents:")
+		for i, value := range c.memory {
+			fmt.Printf("%d at index %d\n", value, i)
+		}
 	}
 }
 func (c *CPU) PrintOutput() {
-	fmt.Println("Current output contents")
-	for i, value := range c.output {
-		fmt.Printf("%d at index %d\n", value, i)
+	if len(c.output) == 0 {
+		fmt.Println("Output in empty")
+	} else {
+		fmt.Println("Current output contents:")
+		for i, value := range c.output {
+			fmt.Printf("%d at index %d\n", value, i)
+		}
 	}
 }
 func (c *CPU) PrintInput() {
-	fmt.Println("Current input contents")
-	for i, value := range c.input {
-		fmt.Printf("%d at index %d\n", value, i)
+	if len(c.input) == 0 {
+		fmt.Println("Input in empty")
+	} else {
+		fmt.Println("Current input contents:")
+		for i, value := range c.input {
+			fmt.Printf("%d at index %d\n", value, i)
+		}
 	}
 }
