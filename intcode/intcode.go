@@ -225,8 +225,15 @@ func (c *CPU) writeInput() int {
 func (c *CPU) writeOutput(value int) {
 	c.output = append(c.output, value)
 }
+
+//	func (c *CPU) ReadOutput() int {
+//		return c.output[len(c.output)-1]
+//	}
 func (c *CPU) ReadOutput() int {
-	return c.output[len(c.output)-1]
+	length := len(c.output)
+	removed := c.output[length-1]
+	c.output = c.output[:length-1]
+	return removed
 }
 
 // ========================
