@@ -59,9 +59,9 @@ func CombineLayers(file string, width, height int) {
 	for i := 0; i < len(pixels); i = i + width {
 		for _, r := range pixels[i : i+width] {
 			if r == '1' {
-				row.WriteByte('*')
+				row.WriteRune('▓')
 			} else {
-				row.WriteByte(' ')
+				row.WriteRune('░')
 			}
 		}
 		fmt.Println(row.String())
