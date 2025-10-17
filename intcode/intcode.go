@@ -236,6 +236,10 @@ func (c *CPU) ReadOutput() int {
 	return removed
 }
 
+func (c *CPU) HasOutput() bool {
+	return len(c.output) > 0
+}
+
 // ========================
 // DEBUG
 // ========================

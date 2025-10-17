@@ -33,3 +33,17 @@ func Abs(x int) int {
 	}
 	return x
 }
+
+func GCD(a, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	if a < 0 {
+		return -a // keep result positive
+	}
+	return a
+}
+
+func LCM(a, b int) int {
+	return a / GCD(a, b) * b
+}
