@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Evokoo/AOC_2019_Go/intcode"
 	"github.com/Evokoo/AOC_2019_Go/utils"
 )
 
@@ -20,6 +21,7 @@ type Game struct {
 	blocks map[Point]struct{}
 	paddle Point
 	ball   Point
+	score  int
 }
 
 func NewGame() *Game {
@@ -31,25 +33,53 @@ func NewGame() *Game {
 	}
 }
 
-func BuildGame(data []int) *Game {
-	game := NewGame()
+func (g *Game) Build(cpu *intcode.CPU) {
+	cpu.Run()
 
-	for i := 0; i < len(data); i = i + 3 {
-		instruction := data[i : i+3]
+	for cpu.HasOutput() {
+		id := cpu.ReadOutput()
+		y := cpu.ReadOutput()
+		x := cpu.ReadOutput()
 
-		switch instruction[2] {
+		if x == -1 && y == 0 {
+			g.score = id
+		}
+
+		switch id {
+		case 0:
+			delete(g.blocks, Point{x, y})
 		case 1:
-			game.AddWall(instruction[0], instruction[1])
+			g.AddWall(x, y)
 		case 2:
-			game.AddBlock(instruction[0], instruction[1])
+			g.AddBlock(x, y)
 		case 3:
-			game.SetPaddle(instruction[0], instruction[1])
+			g.SetPaddle(x, y)
 		case 4:
-			game.SetBall(instruction[0], instruction[1])
+			g.SetBall(x, y)
 		}
 	}
+}
 
-	return game
+func (g *Game) Play(c *intcode.CPU) int {
+	c.WriteToMemory(2, 0)
+
+	score := 0
+	for c.IsActive() {
+		g.Build(c)
+
+		if g.paddle.x < g.ball.x {
+			c.ReadInput(1)
+		} else if g.paddle.x > g.ball.x {
+			c.ReadInput(-1)
+		} else {
+			c.ReadInput(0)
+		}
+
+		if g.score > score {
+			score = g.score
+		}
+	}
+	return score
 }
 
 func (g *Game) AddWall(x, y int) {
@@ -63,6 +93,9 @@ func (g *Game) SetBall(x, y int) {
 }
 func (g *Game) SetPaddle(x, y int) {
 	g.paddle = Point{x, y}
+}
+func (g *Game) GetBlockCount() int {
+	return len(g.blocks)
 }
 
 // ========================

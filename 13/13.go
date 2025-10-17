@@ -5,8 +5,17 @@ import (
 )
 
 func Solve(file string, part int) int {
-	cpu := intcode.NewCPU(ParseInput(file))
-	cpu.Run()
-	game := BuildGame(cpu.DumpOutput())
-	return len(game.blocks)
+	program := ParseInput(file)
+
+	cpu := intcode.NewCPU(program)
+	game := NewGame()
+
+	if part == 1 {
+		game.Build(cpu)
+		return game.GetBlockCount()
+	} else {
+		cpu.Reset(program)
+	}
+
+	return game.Play(cpu)
 }
