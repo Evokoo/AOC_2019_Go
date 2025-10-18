@@ -65,16 +65,6 @@ func (r *Reactions) Get(name string) Recipe {
 	panic("Recipe Not found")
 }
 
-// func (r *Reactions) CalculateOreRequried(current Recipe, inventroy Stock) {
-// 	if current.base {
-// 		return
-// 	}
-
-//		for key, amount := range current.ingredients {
-//			inventroy[key] += amount
-//			r.CalculateOreRequried(r.Get(key), inventroy)
-//		}
-//	}
 func (r Reactions) RequiredOre(id string, amount int, stock Stock, ore *int) {
 	if id == "ORE" {
 		*ore += amount

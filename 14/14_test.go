@@ -17,8 +17,8 @@ type Test struct {
 var tests = []Test{
 	{part: 1, file: "example.txt", target: 2210736},
 	{part: 1, file: "input.txt", target: 158482},
-	// {part: 2, file: "example.txt", target: -1},
-	// {part: 2, file: "input.txt", target: -1},
+	{part: 2, file: "example.txt", target: 460664},
+	{part: 2, file: "input.txt", target: 7993831},
 }
 
 var _ = Describe("AOC 2019 - Day 14", func() {
