@@ -35,6 +35,19 @@ func NewCPU(program []int) *CPU {
 func (c *CPU) Reset(program []int) {
 	*c = *NewCPU(program)
 }
+func (c *CPU) Clone() *CPU {
+	memCopy := make(map[int]int, len(c.memory))
+	for k, v := range c.memory {
+		memCopy[k] = v
+	}
+
+	return &CPU{
+		memory:  memCopy,
+		address: c.address,
+		active:  c.active,
+		base:    c.base,
+	}
+}
 
 // ========================
 // OPERATION
