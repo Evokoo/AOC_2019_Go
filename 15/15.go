@@ -1,14 +1,18 @@
 package day15
 
-import "fmt"
-
-func Solve(file string) int {
+func Solve(file string, part int) int {
 	program := ParseInput(file)
 	zone := NewZone()
 
-	ScanArea(program, &zone)
+	distance := zone.Scan(program)
+	time := zone.Flood()
 
-	fmt.Println(zone.distance)
-
-	return 0
+	switch part {
+	case 1:
+		return distance
+	case 2:
+		return time
+	default:
+		panic("Invalid part")
+	}
 }

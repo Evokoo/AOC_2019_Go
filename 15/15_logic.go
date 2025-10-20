@@ -34,18 +34,16 @@ func NewDroid(position Point, steps int, cpu *intcode.CPU) *Droid {
 // SCAN AREA
 // ========================
 type Zone struct {
-	tiles    Set
-	walls    Set
-	o2       Point
-	distance int
+	tiles Set
+	walls Set
+	o2    Point
 }
 
 func NewZone() Zone {
 	return Zone{
-		tiles:    make(Set),
-		walls:    make(Set),
-		o2:       Point{0, 0},
-		distance: 0,
+		tiles: make(Set),
+		walls: make(Set),
+		o2:    Point{0, 0},
 	}
 }
 
@@ -56,9 +54,10 @@ var DIRECTIONS = map[int]Point{
 	4: {1, 0},
 }
 
-func ScanArea(program []int, zone *Zone) {
+func (z *Zone) Scan(program []int) int {
 	droid := NewDroid(Point{0, 0}, 0, intcode.NewCPU(program))
 	queue := NewQueue(droid)
+	distance := 0
 
 	for !queue.IsEmpty() {
 		current := queue.Pop()
@@ -66,7 +65,7 @@ func ScanArea(program []int, zone *Zone) {
 		for input, direction := range DIRECTIONS {
 			position := Point{current.position.x + direction.x, current.position.y + direction.y}
 
-			if zone.tiles.Has(position) || zone.walls.Has(position) {
+			if z.tiles.Has(position) || z.walls.Has(position) {
 				continue
 			}
 
@@ -74,22 +73,50 @@ func ScanArea(program []int, zone *Zone) {
 			clone.ReadInput(input)
 			clone.Run()
 
-			output := clone.ReadOutput()
-
-			switch output {
+			switch output := clone.ReadOutput(); output {
 			case 0:
-				zone.walls.Add(position)
+				z.walls.Add(position)
 			case 1, 2:
-				zone.tiles.Add(position)
+				z.tiles.Add(position)
 				queue.Push(NewDroid(position, current.steps+1, clone))
 
 				if output == 2 {
-					zone.o2 = position
-					zone.distance = current.steps + 1
+					z.o2 = position
+					distance = current.steps + 1
 				}
 			}
 		}
 	}
+
+	return distance
+}
+
+func (z *Zone) Flood() int {
+	queue := NewQueue(z.o2)
+	time := 0
+
+	for !queue.IsEmpty() {
+		points := queue.Length()
+
+		for range points {
+			current := queue.Pop()
+
+			for _, dir := range DIRECTIONS {
+				next := Point{current.x + dir.x, current.y + dir.y}
+
+				if z.tiles.Has(next) {
+					z.tiles.Delete(next)
+					queue.Push(next)
+				}
+			}
+		}
+
+		if !queue.IsEmpty() {
+			time++
+		}
+	}
+
+	return time
 }
 
 // ========================
@@ -111,21 +138,27 @@ func ParseInput(file string) []int {
 // ========================
 // QUEUE
 // ========================
-type Queue []*Droid
+type Queue[T any] []T
 
-func NewQueue(start *Droid) Queue {
-	return []*Droid{start}
+func NewQueue[T any](start T) Queue[T] {
+	return []T{start}
 }
-func (q *Queue) Push(value *Droid) {
+
+func (q *Queue[T]) Push(value T) {
 	*q = append(*q, value)
 }
-func (q *Queue) Pop() *Droid {
+
+func (q *Queue[T]) Pop() T {
 	removed := (*q)[0]
 	*q = (*q)[1:]
 	return removed
 }
-func (q *Queue) IsEmpty() bool {
-	return len(*q) == 0
+
+func (q *Queue[T]) IsEmpty() bool {
+	return (*q).Length() == 0
+}
+func (q *Queue[T]) Length() int {
+	return len(*q)
 }
 
 // ========================
@@ -142,4 +175,7 @@ func (s *Set) Has(tile Point) bool {
 }
 func (s *Set) Delete(tile Point) {
 	delete(*s, tile)
+}
+func (s *Set) IsEmpty() bool {
+	return len(*s) == 0
 }
