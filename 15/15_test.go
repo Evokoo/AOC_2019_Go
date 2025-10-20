@@ -16,16 +16,16 @@ type Test struct {
 
 var tests = []Test{
 	// {part: 1, file: "example.txt", target: -1},
-	// {part: 1, file: "input.txt", target: -1},
+	{part: 1, file: "input.txt", target: 258},
 	// {part: 2, file: "example.txt", target: -1},
-	// {part: 2, file: "input.txt", target: -1},
+	{part: 2, file: "input.txt", target: 372},
 }
 
 var _ = Describe("AOC 2019 - Day 15", func() {
 	for _, test := range tests {
 		msg := fmt.Sprintf("Testing Part %d with %s", test.part, test.file)
 		It(msg, func() {
-			result := Solve(test.file)
+			result := Solve(test.file, test.part)
 			Expect(result).To(Equal((test.target)))
 		})
 	}
