@@ -9,12 +9,29 @@ import (
 // ========================
 type Sequence []int
 
-var Pattern = []int{0, 1, 0, -1}
+func (s *Sequence) Process(rounds int) {
+	length := len(*s)
+	next := make(Sequence, length)
 
-func (s *Sequence) Process(rounds int){
-	next := make(Sequence, 0, len(*s))
+	for range rounds {
 
-	for
+		for i := range length {
+			value := 0
+			for j := range length {
+				value += (*s)[j] * GetPatternValue(i, j)
+			}
+			next[i] = ExtactLastDigit(value)
+		}
+		*s = next
+	}
+}
+
+func (s *Sequence) Result() int {
+	num := 0
+	for _, d := range (*s)[:8] {
+		num = num*10 + d
+	}
+	return num
 }
 
 // ========================
@@ -29,4 +46,14 @@ func ParseInput(file string) Sequence {
 		output = append(output, int(r-'0'))
 	}
 	return output
+}
+
+func ExtactLastDigit(n int) int {
+	return utils.Abs(n) % 10
+}
+
+var Pattern = []int{0, 1, 0, -1}
+
+func GetPatternValue(i, j int) int {
+	return Pattern[((j+1)/(i+1))%4]
 }
