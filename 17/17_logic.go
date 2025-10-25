@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Evokoo/AOC_2019_Go/intcode"
 	"github.com/Evokoo/AOC_2019_Go/utils"
 )
 
@@ -19,9 +20,12 @@ var DIRECTIONS = []Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
 // ========================
 type Scaffold map[Point]struct{}
 
-func (s *Scaffold) Build(output []int) {
+func (s *Scaffold) Build(program []int) {
+	cpu := intcode.NewCPU(program)
+	cpu.Run()
+
 	x, y := 0, 0
-	for _, value := range output {
+	for _, value := range cpu.DumpOutput() {
 		switch value {
 		case 35:
 			(*s).Add(x, y)
