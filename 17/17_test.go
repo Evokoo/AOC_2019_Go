@@ -25,7 +25,7 @@ var _ = Describe("AOC 2019 - Day 17", func() {
 	for _, test := range tests {
 		msg := fmt.Sprintf("Testing Part %d with %s", test.part, test.file)
 		It(msg, func() {
-			result := Solve(test.file)
+			result := Solve(test.file, test.part)
 			Expect(result).To(Equal((test.target)))
 		})
 	}
