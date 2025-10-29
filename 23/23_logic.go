@@ -31,56 +31,102 @@ func (q *Queue) Push(packet Packet) {
 }
 
 // ========================
-// NETWORK
+// COMPUTER
 // ========================
 type Computer struct {
-	cpu   *intcode.CPU
-	queue Queue
+	cpu  *intcode.CPU
+	in   Queue
+	out  Queue
+	idle bool
 }
 
 func (c *Computer) ProcessPacket() {
-	if c.queue.IsEmpty() {
+	if c.out.IsEmpty() {
 		c.cpu.ReadInput(-1)
+		c.idle = true
+
 	} else {
-		packet := c.queue.Pop()
+		packet := c.out.Pop()
 		c.cpu.ReadInput(packet[0])
+		c.cpu.Run()
 		c.cpu.ReadInput(packet[1])
+		c.idle = false
 	}
+
 	c.cpu.Run()
+
 }
 
 func (c *Computer) SendPackets(network Network) (bool, Packet) {
-	recieved := c.cpu.DumpOutput()
-	for i := 0; i < len(recieved); i += 3 {
-		data := recieved[i : i+3]
+	toSend := c.cpu.DumpOutput()
+	is255 := false
+	output := Packet{}
 
-		// fmt.Println(data)
-
-		if data[0] == 255 {
-			return true, Packet{data[1], data[2]}
-		}
-
-		computer := network[data[0]]
-		computer.queue.Push(Packet{data[1], data[2]})
+	if len(toSend) == 0 {
+		c.idle = true
 	}
 
-	return false, Packet{}
+	for i := 0; i < len(toSend); i += 3 {
+		data := toSend[i : i+3]
+
+		if data[0] == 255 {
+			is255 = true
+			output = Packet{data[1], data[2]}
+			continue
+		}
+
+		computer := network.computers[data[0]]
+		computer.in.Push(Packet{data[1], data[2]})
+		computer.idle = false
+	}
+
+	return is255, output
+}
+
+func (c *Computer) MergeIncoming() {
+	c.out = append(c.out, c.in...)
+	c.in = NewQueue()
 }
 
 // ========================
 // NETWORK
 // ========================
-type Network map[int]*Computer
+type Network struct {
+	computers map[int]*Computer
+	NAT       Packet
+	sent      int
+}
 
 func InitNetwork(program []int, size int) Network {
-	network := make(Network)
+	computers := make(map[int]*Computer)
 
 	for id := range size {
 		cpu := intcode.NewCPU(program)
 		cpu.ReadInput(id)
-		network[id] = &Computer{cpu, NewQueue()}
+		computers[id] = &Computer{cpu, NewQueue(), NewQueue(), false}
 	}
-	return network
+	return Network{computers: computers, NAT: Packet{}}
+}
+
+func (n *Network) IsIdle() bool {
+	for _, computer := range n.computers {
+		if !computer.out.IsEmpty() || !computer.idle {
+			return false
+		}
+	}
+	return true
+}
+
+func (n *Network) Reset() (bool, int) {
+	if n.NAT[1] == n.sent {
+		return true, n.sent
+	}
+
+	computer := n.computers[0]
+	computer.in.Push(n.NAT)
+	n.sent = n.NAT[1]
+
+	return false, 0
 }
 
 // ========================
