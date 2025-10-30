@@ -243,6 +243,10 @@ func (c *CPU) DumpOutput() []int {
 	return c.output
 }
 
+func (c *CPU) ClearOutput() {
+	c.output = c.output[:0]
+}
+
 func (c *CPU) ReadOutput() int {
 	length := len(c.output)
 	removed := c.output[length-1]
