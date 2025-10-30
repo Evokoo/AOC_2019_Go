@@ -6,7 +6,6 @@ func Solve(file string, part int) int {
 
 	for {
 		for _, computer := range network.computers {
-			computer.MergeIncoming()
 			computer.ProcessPacket()
 			is255, packet := computer.SendPackets(network)
 
@@ -24,9 +23,6 @@ func Solve(file string, part int) int {
 
 		if network.IsIdle() {
 			panic("IDLE")
-			if exit, y := network.Reset(); exit {
-				return y
-			}
 		}
 	}
 

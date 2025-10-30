@@ -34,19 +34,18 @@ func (q *Queue) Push(packet Packet) {
 // COMPUTER
 // ========================
 type Computer struct {
-	cpu  *intcode.CPU
-	in   Queue
-	out  Queue
-	idle bool
+	cpu   *intcode.CPU
+	queue Queue
+	idle  bool
 }
 
 func (c *Computer) ProcessPacket() {
-	if c.out.IsEmpty() {
+	if c.queue.IsEmpty() {
 		c.cpu.ReadInput(-1)
 		c.idle = true
 
 	} else {
-		packet := c.out.Pop()
+		packet := c.queue.Pop()
 		c.cpu.ReadInput(packet[0])
 		c.cpu.Run()
 		c.cpu.ReadInput(packet[1])
@@ -62,10 +61,6 @@ func (c *Computer) SendPackets(network Network) (bool, Packet) {
 	is255 := false
 	output := Packet{}
 
-	if len(toSend) == 0 {
-		c.idle = true
-	}
-
 	for i := 0; i < len(toSend); i += 3 {
 		data := toSend[i : i+3]
 
@@ -76,16 +71,11 @@ func (c *Computer) SendPackets(network Network) (bool, Packet) {
 		}
 
 		computer := network.computers[data[0]]
-		computer.in.Push(Packet{data[1], data[2]})
-		computer.idle = false
+		computer.queue.Push(Packet{data[1], data[2]})
+		// computer.idle = false
 	}
 
 	return is255, output
-}
-
-func (c *Computer) MergeIncoming() {
-	c.out = append(c.out, c.in...)
-	c.in = NewQueue()
 }
 
 // ========================
@@ -103,14 +93,14 @@ func InitNetwork(program []int, size int) Network {
 	for id := range size {
 		cpu := intcode.NewCPU(program)
 		cpu.ReadInput(id)
-		computers[id] = &Computer{cpu, NewQueue(), NewQueue(), false}
+		computers[id] = &Computer{cpu, NewQueue(), false}
 	}
 	return Network{computers: computers, NAT: Packet{}}
 }
 
 func (n *Network) IsIdle() bool {
 	for _, computer := range n.computers {
-		if !computer.out.IsEmpty() || !computer.idle {
+		if !computer.queue.IsEmpty() || !computer.idle {
 			return false
 		}
 	}
@@ -123,7 +113,7 @@ func (n *Network) Reset() (bool, int) {
 	}
 
 	computer := n.computers[0]
-	computer.in.Push(n.NAT)
+	computer.queue.Push(n.NAT)
 	n.sent = n.NAT[1]
 
 	return false, 0
