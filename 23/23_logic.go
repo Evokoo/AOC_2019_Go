@@ -72,8 +72,10 @@ func (c *Computer) SendPackets(network Network) (bool, Packet) {
 
 		computer := network.computers[data[0]]
 		computer.queue.Push(Packet{data[1], data[2]})
-		// computer.idle = false
+		computer.idle = false
 	}
+
+	c.cpu.ClearOutput()
 
 	return is255, output
 }

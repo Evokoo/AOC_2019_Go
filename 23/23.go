@@ -1,7 +1,5 @@
 package day23
 
-import "fmt"
-
 func Solve(file string, part int) int {
 	program := ParseInput(file)
 	network := InitNetwork(program, 50)
@@ -24,7 +22,9 @@ func Solve(file string, part int) int {
 		}
 
 		if network.IsIdle() {
-			fmt.Println("NETWORK IS IDLE")
+			if exit, y := network.Reset(); exit {
+				return y
+			}
 		}
 	}
 }

@@ -18,7 +18,7 @@ var tests = []Test{
 	// {part: 1, file: "example.txt", target: -1},
 	{part: 1, file: "input.txt", target: 23954},
 	// {part: 2, file: "example.txt", target: -1},
-	{part: 2, file: "input.txt", target: -1},
+	{part: 2, file: "input.txt", target: 17265},
 }
 
 var _ = Describe("AOC 2019 - Day 23", func() {
